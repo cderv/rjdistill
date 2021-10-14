@@ -2,13 +2,17 @@
 rjournal_web_article <- function(...) {
   args <- c()
 
-  theme <- system.file("rjstyle.css", package = "rjdistill")
-
   rmd_path <- NULL
 
   post_knit <- function(metadata, input_file, runtime, ...) {
+    # save Rmd path for later use
     rmd_path <<- input_file
     NULL
+  }
+
+  pre_processor <- function(metadata, input_file, runtime, knit_meta, files_dir,
+                            output_dir) {
+    rmarkdown::pandoc_include_args(in_header = system.file("rjdistill.html", package = "rjdistill"))
   }
 
   post_processor <- function(metadata, input_file, output_file, clean, verbose) {
@@ -34,7 +38,11 @@ rjournal_web_article <- function(...) {
     keep_md = NULL, # use base one
     clean_supporting = NULL, # use base one
     post_knit = post_knit,
+    pre_processor = pre_processor,
     post_processor = post_processor,
-    base_format = distill::distill_article(theme = theme, ...)
+    base_format = distill::distill_article(
+      self_contained = FALSE,
+      toc = FALSE,
+      ...)
   )
 }
