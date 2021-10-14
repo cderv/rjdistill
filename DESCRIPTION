@@ -13,3 +13,4 @@ Imports:
     callr,
     distill,
     rticles
+Remotes: rstudio/distill@rjdistill-adjustment
