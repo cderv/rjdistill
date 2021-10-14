@@ -2,6 +2,8 @@
 rjournal_web_article <- function(...) {
   args <- c()
 
+  theme <- system.file("rjstyle.css", package = "rjdistill")
+
   rmd_path <- NULL
 
   post_knit <- function(metadata, input_file, runtime, ...) {
