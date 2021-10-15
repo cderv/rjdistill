@@ -3,10 +3,12 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
   args <- c()
 
   rmd_path <- NULL
+  render_pdf <- NULL
 
   post_knit <- function(metadata, input_file, runtime, ...) {
     # save Rmd path for later use
     rmd_path <<- input_file
+    render_pdf <<- !is.null(metadata$type)
 
     NULL
   }
@@ -48,8 +50,10 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
     args
   }
 
-  post_processor <- function(metadata, input_file, output_file, clean, verbose) {
-    if (!is.null(metadata$type)) {
+  on_exit <- function() {
+    # TODO: This should be done in a temp directory
+    # and files produced moved back into the main dir.
+    if (!is.null(render_pdf)) {
       callr::r(function(input){
         rmarkdown::render(
           input,
@@ -58,8 +62,6 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
         )
       }, args = list(input = rmd_path))
     }
-    # return output file unchanged
-    output_file
   }
 
   rmarkdown::output_format(
@@ -72,7 +74,7 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
     clean_supporting = NULL, # use base one
     post_knit = post_knit,
     pre_processor = pre_processor,
-    post_processor = post_processor,
+    on_exit = on_exit,
     base_format = distill::distill_article(
       self_contained = self_contained,
       toc = toc,
