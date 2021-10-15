@@ -9,15 +9,23 @@
 
     show_byline_column('Published')
 
+    // tweak function
+    var rmd_meta = JSON.parse($("#radix-rmarkdown-metadata").html());
+    function get_meta(name, meta) {
+      var ind = meta.attributes.names.value.findIndex((e) => e == name)
+      var val = meta.value[ind]
+      if (val.type != 'list') {
+        return val.value.toString()
+      }
+      return val
+    }
+
     // tweak description
     $("d-title p:not(:empty)").first().prepend("<b>Abstract</b><br>")
 
     // Add clickable tags
-    var rmd_meta = JSON.parse($("#radix-rmarkdown-metadata").html());
-    var ind = rmd_meta.attributes.names.value.findIndex((e) => e == "slug")
-    var slug = rmd_meta.value[ind].value.toString()
-    ind = rmd_meta.attributes.names.value.findIndex((e) => e == "doi")
-    var doi = rmd_meta.value[ind].value.toString()
+    const slug = get_meta('slug', rmd_meta)
+    const doi = get_meta('doi', rmd_meta)
 
     var title = $("d-title h1").text()
 
@@ -26,6 +34,17 @@
     newdiv.append('<a href="' + slug + '" class="dt-tag"><i class="fas fa-file-pdf"></i> PDF</a>')
     newdiv.append('<a href="https://twitter.com/intent/tweet?text=$title$&url=https%3A%2F%2Fdoi.org%2F' + doi + '" class="dt-tag"><i class="fab fa-twitter"></i> Tweet</a>')
     $('d-title').append(newdiv)
+
+    // tweak by-line
+    var byline = $("d-byline div.byline")
+    ind = rmd_meta.attributes.names.value.findIndex((e) => e == "journal")
+    const journal = get_meta('journal', rmd_meta)
+    const volume = get_meta('volume', rmd_meta)
+    const issue = get_meta('issue', rmd_meta)
+    const jrtitle = get_meta('title', journal)
+    const firstpage = get_meta('firstpage', journal)
+    const lastpage = get_meta('lastpage', journal)
+    byline.append('<div class="rjournal grid"><h3>'+jrtitle+'</h3><p>Volume '+volume+':'+issue+'</p><p>pages '+firstpage+'-'+lastpage+'</p></div>')
 
   })
 </script>
@@ -38,7 +57,7 @@
   */
 
   d-byline .byline {
-    grid-template-columns: 2fr 2fr 2fr 2fr;
+    grid-template-columns: 2fr 2fr 2fr 2fr 2fr;
   }
 
   d-title h1, d-title p, d-title figure,
