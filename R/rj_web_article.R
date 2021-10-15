@@ -1,5 +1,5 @@
 #' @export
-rjournal_web_article <- function(...) {
+rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
   args <- c()
 
   rmd_path <- NULL
@@ -74,8 +74,8 @@ rjournal_web_article <- function(...) {
     pre_processor = pre_processor,
     post_processor = post_processor,
     base_format = distill::distill_article(
-      self_contained = FALSE,
-      toc = FALSE,
+      self_contained = self_contained,
+      toc = toc,
       ...)
   )
 }
