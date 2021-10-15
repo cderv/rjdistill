@@ -53,7 +53,9 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
   on_exit <- function() {
     # TODO: This should be done in a temp directory
     # and files produced moved back into the main dir.
-    if (!is.null(render_pdf)) {
+
+    # Deactivate for now as I am not sure to understand what should be built
+    if (FALSE && !is.null(render_pdf)) {
       callr::r(function(input){
         rmarkdown::render(
           input,
