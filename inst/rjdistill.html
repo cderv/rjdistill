@@ -1,11 +1,32 @@
 <script>
   $(function() {
     console.log("Starting...")
+
+    // Always show Published - distill hides it if not set
     function show_byline_column(caption) {
       $('d-byline').find('h3:contains("' + caption + '")').parent().css('visibility', 'visible');
     }
 
     show_byline_column('Published')
+
+    // tweak description
+    $("d-title p:not(:empty)").first().prepend("<b>Abstract</b><br>")
+
+    // Add clickable tags
+    var rmd_meta = JSON.parse($("#radix-rmarkdown-metadata").html());
+    var ind = rmd_meta.attributes.names.value.findIndex((e) => e == "slug")
+    var slug = rmd_meta.value[ind].value.toString()
+    ind = rmd_meta.attributes.names.value.findIndex((e) => e == "doi")
+    var doi = rmd_meta.value[ind].value.toString()
+
+    var title = $("d-title h1").text()
+
+    const newdiv = $('<div class="dt-tags" style="grid-column: page;">')
+    newdiv.append('<a href="#citation" class="dt-tag"><i class="fas fa-quote-left"></i> Cite</a>')
+    newdiv.append('<a href="' + slug + '" class="dt-tag"><i class="fas fa-file-pdf"></i> PDF</a>')
+    newdiv.append('<a href="https://twitter.com/intent/tweet?text=$title$&url=https%3A%2F%2Fdoi.org%2F' + doi + '" class="dt-tag"><i class="fab fa-twitter"></i> Tweet</a>')
+    $('d-title').append(newdiv)
+
   })
 </script>
 
