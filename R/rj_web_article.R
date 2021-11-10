@@ -53,16 +53,16 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
       )
     }
     if(is.null(metadata$CTV)) {
-      if (requireNamespace("ctv", quietly = TRUE)) {
-        ctvs <- ctv::available.views()
-        ctvs <- Filter(
-          function(taskview) {
-            any(metadata$packages$cran %in% taskview$packagelist$name)
-          },
-          ctvs
-        )
-        metadata$CTV <- vapply(ctvs, function(x) x[["name"]], character(1L))
-      }
+      ctvs <- readRDS(
+        gzcon(url("https://cran.r-project.org/src/contrib/Views.rds", open = "rb"))
+      )
+      ctvs <- Filter(
+        function(taskview) {
+          any(metadata$packages$cran %in% taskview$packagelist$name)
+        },
+        ctvs
+      )
+      metadata$CTV <- vapply(ctvs, function(x) x[["name"]], character(1L))
     }
 
     metadata$csl <- metadata$csl %||% system.file("rjournal.csl", package = "rjdistill", mustWork = TRUE)
