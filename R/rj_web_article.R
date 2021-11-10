@@ -64,6 +64,9 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
         metadata$CTV <- vapply(ctvs, function(x) x[["name"]], character(1L))
       }
     }
+
+    metadata$csl <- metadata$csl %||% system.file("rjournal.csl", package = "rjdistill", mustWork = TRUE)
+
     rlang::env_poke(
       render_env, nm = "front_matter", value = metadata,
       inherit = TRUE, create = TRUE
