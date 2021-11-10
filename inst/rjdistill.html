@@ -21,19 +21,23 @@
     }
 
     // tweak description
-    $("d-title p:not(:empty)").first().prepend("<b>Abstract</b><br>")
-
     // Add clickable tags
     const slug = get_meta('slug', rmd_meta)
     const doi = get_meta('doi', rmd_meta)
 
-    var title = $("d-title h1").text()
+    var title = $("d-title").text
 
-    const newdiv = $('<div class="dt-tags" style="grid-column: page;">')
-    newdiv.append('<a href="#citation" class="dt-tag"><i class="fas fa-quote-left"></i> Cite</a>')
-    newdiv.append('<a href="' + slug + '.pdf" class="dt-tag"><i class="fas fa-file-pdf"></i> PDF</a>')
-    newdiv.append('<a href="https://twitter.com/intent/tweet?text='+title+'&url=https%3A%2F%2Fdoi.org%2F' + doi + '" class="dt-tag"><i class="fab fa-twitter"></i> Tweet</a>')
-    $('d-title').append(newdiv)
+    const buttons = $('<div class="dt-tags" style="grid-column: page;">')
+    buttons.append('<a href="#citation" class="dt-tag"><i class="fas fa-quote-left"></i> Cite</a>')
+    buttons.append('<a href="' + slug + '.pdf" class="dt-tag"><i class="fas fa-file-pdf"></i> PDF</a>')
+    buttons.append('<a href="https://twitter.com/intent/tweet?text='+title+'&url=https%3A%2F%2Fdoi.org%2F' + doi + '" class="dt-tag"><i class="fab fa-twitter"></i> Tweet</a>')
+
+    const abstract = $('<d-abstract>')
+    abstract.append('<b>Abstract:</b><br>')
+    abstract.append($("d-title p:not(:empty)").first()) // Move description to d-abstract
+    $("d-title p:empty").remove() // Remove empty paragraphs after title
+    abstract.append(buttons)
+    abstract.insertAfter($('d-title')) // Add abstract section after title
 
     // tweak by-line
     var byline = $("d-byline div.byline")
@@ -48,7 +52,7 @@
     $('div.rjournal').append('<h3>Volume</h3>')
     $('div.rjournal').append('<h3>Pages</h3>')
     $('div.rjournal').append('<p class="volume">'+volume+':'+issue+'</p>')
-    $('div.rjournal').append('<p class="pages">'+firstpage+'-'+lastpage+'</p>')
+    $('div.rjournal').append('<p class="pages">'+firstpage+' - '+lastpage+'</p>')
 
     const received_date = get_meta('date_received', rmd_meta)
     byline.find('h3:contains("Published")').parent().append('<h3>Received</h3><p>'+received_date+'</p>')
@@ -64,7 +68,7 @@
   */
 
   d-byline .byline {
-    grid-template-columns: 2fr 2fr 2fr;
+    grid-template-columns: 2fr 2fr 2fr 2fr;
   }
 
   d-byline .rjournal {
