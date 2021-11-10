@@ -67,6 +67,8 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
 
     metadata$csl <- metadata$csl %||% system.file("rjournal.csl", package = "rjdistill", mustWork = TRUE)
 
+    metadata$output <- replace_names(metadata$output, c("rjdistill::rjournal_web_article" = "distill::distill_article"))
+
     rlang::env_poke(
       render_env, nm = "front_matter", value = metadata,
       inherit = TRUE, create = TRUE
