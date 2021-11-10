@@ -1,16 +1,80 @@
 #' @export
 rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
   args <- c()
+  base_format <- distill::distill_article(
+    self_contained = self_contained, toc = toc, ...
+  )
+  distill_post_knit <- base_format$post_knit
 
   rmd_path <- NULL
   render_pdf <- NULL
 
-  post_knit <- function(metadata, input_file, runtime, ...) {
+  base_format$post_knit <- function(metadata, input_file, runtime, ...) {
+    # Modify YAML metadata for pre-processor
+    render_env <- rlang::caller_env(n = 2)
+    metadata <- replace_names(metadata, c("abstract" = "description"))
+    for(i in seq_along(metadata$author)) {
+      metadata$author[[i]] <- replace_names(metadata$author[[i]], c("orcid" = "orcid_id"))
+    }
+
+    metadata$journal <- list(
+      title = metadata$journal$title %||% "The R Journal",
+      issn = metadata$journal$issn %||% "2073-4859",
+      firstpage = metadata$journal$firstpage %||% metadata$pages[1],
+      lastpage = metadata$journal$lastpage %||% metadata$pages[2]
+    )
+    metadata$slug <- metadata$slug %||% xfun::sans_ext(basename(input_file))
+    metadata$pdf_url <- xfun::with_ext(metadata$slug, "pdf")
+    metadata$citation_url <- paste0("https://doi.org/10.32614/", metadata$slug)
+    metadata$doi <- paste0("10.32614/", metadata$slug)
+    metadata$creative_commons <- metadata$creative_commons %||% "CC BY"
+    if(is.null(metadata$packages)) {
+      input <- xfun::read_utf8(input_file)
+      pkgs <- gregexpr("\\\\(CRAN|BIO)pkg\\{.+?\\}", input)
+      pkgs <- mapply(
+        function(pos, line) {
+          if(pos[1] == -1) return(NULL)
+          substr(rep_len(line, length(pos)), pos, pos + pos%@%"match.length" - 1)
+        },
+        pkgs, input,
+        SIMPLIFY = FALSE
+      )
+      pkgs <- unique(do.call(c, pkgs))
+      pkg_is_cran <- grepl("^\\\\CRAN", pkgs)
+      pkgs <- sub("\\\\(CRAN|BIO)pkg\\{(.+?)\\}$", "\\2", pkgs)
+      message(paste0(
+        "Detected the following packages from article:\n  ",
+        "CRAN: ", paste0(pkgs[pkg_is_cran], collapse = ", "), "\n  ",
+        "Bioconductor: ", paste0(pkgs[!pkg_is_cran], collapse = ", ")
+      ))
+      metadata$packages <- list(
+        cran = pkgs[pkg_is_cran],
+        bioc = pkgs[!pkg_is_cran]
+      )
+    }
+    if(is.null(metadata$CTV)) {
+      if (requireNamespace("ctv", quietly = TRUE)) {
+        ctvs <- ctv::available.views()
+        ctvs <- Filter(
+          function(taskview) {
+            any(metadata$packages$cran %in% taskview$packagelist$name)
+          },
+          ctvs
+        )
+        metadata$CTV <- vapply(ctvs, function(x) x[["name"]], character(1L))
+      }
+    }
+    rlang::env_poke(
+      render_env, nm = "front_matter", value = metadata,
+      inherit = TRUE, create = TRUE
+    )
+
     # save Rmd path for later use
     rmd_path <<- input_file
     render_pdf <<- !is.null(metadata$type)
 
-    NULL
+    # Pass updated metadata to distill's post_knit()
+    distill_post_knit(metadata, input_file, runtime, ...)
   }
 
   pre_processor <- function(metadata, input_file, runtime, knit_meta, files_dir,
@@ -27,12 +91,12 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
       data <- c(data, list(CTV = CTV))
     }
     if (!is.null(metadata$packages)) {
-      if (!is.null(metadata$packages$cran)) {
+      if (length(metadata$packages$cran) != 0) {
         CRAN <- sprintf("[%s](https://cran.r-project.org/package=%s)", metadata$packages$cran, metadata$packages$cran)
         CRAN <- paste(CRAN, collapse = ", ")
         data <- c(data, list(CRAN = CRAN))
       }
-      if (!is.null(metadata$packages$bioc)) {
+      if (length(metadata$packages$bioc) != 0) {
         BIOC <- sprintf("[%s](https://www.bioconductor.org/packages/%s)", metadata$packages$bioc, metadata$packages$bioc)
         BIOC <- paste(BIOC, collapse = ", ")
         data <- c(data, list(BIOC = BIOC))
@@ -43,7 +107,13 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
     appendix <- whisker::whisker.render(template, data)
 
     input <- xfun::read_utf8(input_file)
-    xfun::write_utf8(c(input, "", appendix), input_file)
+    front_matter_delimiters <- grep("^(---|\\.\\.\\.)\\s*$", input)
+
+    xfun::write_utf8(
+      c("---", yaml::as.yaml(metadata), "---",
+        input[(front_matter_delimiters[2]+1):length(input)], "", appendix),
+      input_file
+    )
     # Custom args
     args <- rmarkdown::pandoc_include_args(in_header = system.file("rjdistill.html", package = "rjdistill"))
 
@@ -74,12 +144,10 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
     ),
     keep_md = NULL, # use base one
     clean_supporting = NULL, # use base one
-    post_knit = post_knit,
+    pre_knit = NULL,
+    # post_knit = post_knit, # passed directly to base_format
     pre_processor = pre_processor,
     on_exit = on_exit,
-    base_format = distill::distill_article(
-      self_contained = self_contained,
-      toc = toc,
-      ...)
+    base_format = base_format
   )
 }

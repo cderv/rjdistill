@@ -18,7 +18,7 @@ Materials is available in addition to this article. It can be downloaded at
 {{/CTV}}
 
 {{#BIOC}}
-## BIOC packages used {.appendix}
+## Bioconductor packages used {.appendix}
 
 {{BIOC}}
 {{/BIOC}}
