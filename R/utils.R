@@ -6,7 +6,7 @@ replace_names <- function(x, replacements) {
 }
 
 strip_macros <- function(x){
-  gsub("\\\\(CRAN|BIO)?pkg\\{(.+?)\\}", "\\1", x)
+  gsub("\\\\(CRAN|BIO)?pkg\\{(.+?)\\}", "\\2", x)
 }
 
 `%||%` <- function(x, y) {
