@@ -77,8 +77,8 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
     )
 
     # save Rmd path for later use
-    rmd_path <<- input_file
-    render_pdf <<- !is.null(metadata$type)
+    rmd_path <<- normalizePath(input_file)
+    render_pdf <<- !is.null(metadata$author)
 
     # Pass updated metadata to distill's post_knit()
     distill_post_knit(metadata, input_file, runtime, ...)
@@ -132,7 +132,7 @@ rjournal_web_article <- function(toc = FALSE, self_contained = FALSE, ...) {
     # and files produced moved back into the main dir.
 
     # Deactivate for now as I am not sure to understand what should be built
-    if (FALSE && !is.null(render_pdf)) {
+    if (!is.null(render_pdf)) {
       callr::r(function(input){
         rmarkdown::render(
           input,
